@@ -24,7 +24,7 @@ def help(message):
     bot.reply_to(message, "Hello " + name + "!")
 
 
-@bot.message_handler(commands=['whereiam'])
+@bot.message_handler(commands=['whereami'])
 def whereiam(m):
     teclado = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
     itemLoc = types.KeyboardButton("Enviar mi localización", request_location=True)
