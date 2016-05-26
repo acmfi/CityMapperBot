@@ -5,7 +5,7 @@ from telebot import types
 
 # Secure token read ####
 with open("./acm.token", "r") as TOKEN:
-    bot = telebot.TeleBot(TOKEN.read())
+    bot = telebot.TeleBot(TOKEN.read().strip())
 
 
 # Load all text to say from json file ####
