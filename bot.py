@@ -35,13 +35,14 @@ def whereiam(m):
 @bot.message_handler(commands=['whoami'])
 def whoami(m):
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton(text=str(m.from_user.first_name), callback_data='test'))
-    bot.send_message(m.chat.id, "Lo sabia", disable_notification=True, reply_markup=markup)
+    markup.add(types.InlineKeyboardButton(text=str(m.from_user.first_name), callback_data="test"))
+    bot.send_message(m.chat.id, "Pulsa en tu nombre: ", disable_notification=True, reply_markup=markup)
+    bot.send_message(m.chat.id, "Si no recibes nada tras pulsar, es que no ha funcionado.")
 
 
-@bot.message_handler(commands=['test'])
-def test(m):
-    print("callback")
+@bot.callback_query_handler(func=lambda call: True)
+def callback_whoami(call):
+    bot.send_message(call.message.chat.id, "Respuesta al callback.")
 
 
 @bot.message_handler(commands=['location'])
