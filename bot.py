@@ -71,38 +71,37 @@ def callback_id(call):
     bot.edit_message_text(new_msg, chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_whoami(call):
-    bot.send_message(call.message.chat.id, call.data)
-
 @bot.message_handler(commands=['route'])
 def route(m):
-    print(m.from_user.first_name + " ha solicitado una ruta")
     with open("./dataBot/testRoute.json", "r") as route:
         route = json.load(route)
         i = 1
         step = 'Paso ' + str(i)
         indicacion = route[step]
     markup = types.InlineKeyboardMarkup()
-    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<")
-    derecha = types.InlineKeyboardButton(text=">>", callback_data="<<")
+    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<, " + str(i-1))
+    derecha = types.InlineKeyboardButton(text=">>", callback_data=">>, " + str(i+1))
     markup.add(izquierda, derecha)
+    stra = "<<, " + str(i+1)
+    print(stra.split(', ')[1])
     bot.send_message(m.chat.id, indicacion, reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: (call.data == "<<") or (call.data == ">>"))
+@bot.callback_query_handler(func=lambda call: (call.data.split(',')[0] == "<<")
+                            or (call.data.split(', ')[0] == ">>"))
 def callback_route(call):
+    print("Match")
     with open("./dataBot/testRoute.json", "r") as route:
         route = json.load(route)
-        i = 2
+        i = int(call.data.split(', ')[1])
         step = 'Paso ' + str(i)
+        print(step)
         indicacion = route[step]
     markup = types.InlineKeyboardMarkup()
-    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<")
-    derecha = types.InlineKeyboardButton(text=">>", callback_data="<<")
+    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<, " + str((i-1)%3 + 1))
+    derecha = types.InlineKeyboardButton(text=">>", callback_data=">>, " + str((i+1)%3 + 1))
     markup.add(izquierda, derecha)
-    if call.data == "<<" or call.data == ">>":
-        bot.edit_message_text(indicacion,chat_id=call.message.chat.id,
-                              message_id=call.message.message_id, reply_markup=markup)
+    bot.edit_message_text(indicacion,chat_id=call.message.chat.id,
+                          message_id=call.message.message_id, reply_markup=markup)
 
 @bot.message_handler(commands=['location'])
 def send_location(m):
