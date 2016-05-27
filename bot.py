@@ -82,8 +82,6 @@ def route(m):
     izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<, " + str(i-1))
     derecha = types.InlineKeyboardButton(text=">>", callback_data=">>, " + str(i+1))
     markup.add(izquierda, derecha)
-    stra = "<<, " + str(i+1)
-    print(stra.split(', ')[1])
     bot.send_message(m.chat.id, indicacion, reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: (call.data.split(',')[0] == "<<")
@@ -94,11 +92,10 @@ def callback_route(call):
         route = json.load(route)
         i = int(call.data.split(', ')[1])
         step = 'Paso ' + str(i)
-        print(step)
         indicacion = route[step]
     markup = types.InlineKeyboardMarkup()
-    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<, " + str((i-1)%3 + 1))
-    derecha = types.InlineKeyboardButton(text=">>", callback_data=">>, " + str((i+1)%3 + 1))
+    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<, " + str((i)%3 + 1))
+    derecha = types.InlineKeyboardButton(text=">>", callback_data=">>, " + str((i)%3 + 1))
     markup.add(izquierda, derecha)
     bot.edit_message_text(indicacion,chat_id=call.message.chat.id,
                           message_id=call.message.message_id, reply_markup=markup)
