@@ -7,13 +7,24 @@ from telebot import types
 with open("./acm.token", "r") as TOKEN:
     bot = telebot.TeleBot(TOKEN.read().strip())
 
-
 # Load all text to say from json file ####
 with open("./dataBot/text.json", "r") as data_text:
     text = json.load(data_text)
     location_text = text['location']
 
+# EMT api load
+with open("./EMTapi.auth", "r") as EMTapi:
+    EMTapi_id = EMTapi.readline().strip('\n')
+    EMTapi_pass = EMTapi.readline().strip('\n').strip(' ')
+
+# GMaps Static Location api load
+with open("./GMapsStaticApi.auth", "r") as GMapsStatic_api:
+    GMapsStatic_api_name = GMapsStatic_api.readline().strip('\n')
+    GMapsStatic_api_pass = GMapsStatic_api.readline().strip('\n').strip(' ')
+
+
 # Listener
+
 
 def listener(messages):
     # When new messages arrive TeleBot will call this function.
@@ -30,9 +41,9 @@ def listener(messages):
 # Initializing listener
 bot.set_update_listener(listener)
 
-########################
+####################
 # Bot handlers #####
-########################
+####################
 
 
 @bot.message_handler(commands=['hello'])
@@ -43,32 +54,41 @@ def help(message):
 
 @bot.message_handler(commands=['whereami'])
 def whereiam(m):
-    teclado = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    itemLoc = types.KeyboardButton("Enviar mi localización", request_location=True)
+    teclado = types.ReplyKeyboardMarkup(one_time_keyboard=True,
+                                        resize_keyboard=True)
+    itemLoc = types.KeyboardButton("Compartir mi localización",
+                                   request_location=True)
     teclado.row(itemLoc)
     bot.send_message(m.chat.id, location_text, reply_markup=teclado)
 
 markup = types.InlineKeyboardMarkup()
-username_button = types.InlineKeyboardButton("Username", callback_data="username")
+username_button = types.InlineKeyboardButton("Username",
+                                             callback_data="username")
 id_button = types.InlineKeyboardButton("Id", callback_data="id")
 markup.add(username_button, id_button)
 
 
 @bot.message_handler(commands=['whoami'])
 def whoami(m):
-    bot.send_message(m.chat.id, "Pulsa un botón: ", disable_notification=True, reply_markup=markup)
+    bot.send_message(m.chat.id, "Pulsa un botón: ", disable_notification=True,
+                     reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "username")
 def callback_username(call):
     new_msg = "Tu username es: " + call.from_user.username
-    bot.edit_message_text(new_msg, chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup)
+    bot.edit_message_text(new_msg, chat_id=call.message.chat.id,
+                          message_id=call.message.message_id,
+                          reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "id")
 def callback_id(call):
     new_msg = "Tu id es: " + str(call.from_user.id)
-    bot.edit_message_text(new_msg, chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=markup)
+    bot.edit_message_text(new_msg,
+                          chat_id=call.message.chat.id,
+                          message_id=call.message.message_id,
+                          reply_markup=markup)
 
 
 @bot.message_handler(commands=['route'])
@@ -79,26 +99,34 @@ def route(m):
         step = 'Paso ' + str(i)
         indicacion = route[step]
     markup = types.InlineKeyboardMarkup()
-    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<, " + str(i-1))
-    derecha = types.InlineKeyboardButton(text=">>", callback_data=">>, " + str(i+1))
+    izquierda = types.InlineKeyboardButton(text="<<",
+                                           callback_data="<<, " + str(i-1))
+    derecha = types.InlineKeyboardButton(text=">>",
+                                         callback_data=">>, " + str(i+1))
     markup.add(izquierda, derecha)
     bot.send_message(m.chat.id, indicacion, reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: (call.data.split(',')[0] == "<<")
-                            or (call.data.split(', ')[0] == ">>"))
+@bot.callback_query_handler(func=lambda call:
+                            (call.data.split(',')[0] == "<<") or
+                            (call.data.split(', ')[0] == ">>"))
 def callback_route(call):
-    print("Match")
     with open("./dataBot/testRoute.json", "r") as route:
         route = json.load(route)
         i = int(call.data.split(', ')[1])
         step = 'Paso ' + str(i)
         indicacion = route[step]
     markup = types.InlineKeyboardMarkup()
-    izquierda = types.InlineKeyboardButton(text="<<", callback_data="<<, " + str((i)%3 + 1))
-    derecha = types.InlineKeyboardButton(text=">>", callback_data=">>, " + str((i)%3 + 1))
+    izquierda = types.InlineKeyboardButton(text="<<",
+                                           callback_data="<<, " +
+                                           str((i) % 3 + 1))
+    derecha = types.InlineKeyboardButton(text=">>",
+                                         callback_data=">>, " +
+                                         str((i) % 3 + 1))
     markup.add(izquierda, derecha)
-    bot.edit_message_text(indicacion,chat_id=call.message.chat.id,
-                          message_id=call.message.message_id, reply_markup=markup)
+    bot.edit_message_text(indicacion, chat_id=call.message.chat.id,
+                          message_id=call.message.message_id,
+                          reply_markup=markup)
+
 
 @bot.message_handler(commands=['location'])
 def send_location(m):
@@ -109,4 +137,5 @@ def send_location(m):
 bot.skip_pending = True
 
 print("Running...")
+
 bot.polling()
