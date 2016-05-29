@@ -1,5 +1,7 @@
+import requests
 import telebot
 import json
+import datetime
 from telebot import types
 
 
@@ -50,6 +52,23 @@ bot.set_update_listener(listener)
 def help(message):
     name = message.from_user.username
     bot.reply_to(message, "Hello " + name + "!")
+
+
+@bot.message_handler(commands=['tiempoDeEspera'])
+def tiempoDeEspera(m):
+    url = 'https://openbus.emtmadrid.es:9443/emt-proxy-server/last/geo/GetArriveStop.php'
+    r = requests.post(url, data={'idClient': EMTapi_id, 'passKey': EMTapi_pass,
+                                 'idStop': '755'})
+    r = r.json()
+    line_name1 = r['arrives'][0]['lineId']
+    line_name2 = r['arrives'][1]['lineId']
+    destination1 = r['arrives'][0]['destination']
+    destination2 = r['arrives'][1]['destination']
+    time = str(datetime.timedelta(seconds=666))
+    textEspera1 = "Proximo bus de la linea " + line_name1 + " con destino " + destination1 + " a " + time
+    textEspera2 = "Proximo bus de la linea " + line_name2 + " con destino " + destination2 + " a " + time
+    textEspera = textEspera1 + '\n' + textEspera2
+    bot.send_message(m.chat.id, textEspera)
 
 
 @bot.message_handler(commands=['whereami'])
@@ -131,7 +150,7 @@ def callback_route(call):
 @bot.message_handler(commands=['location'])
 def send_location(m):
     lat = 40.4101932
-    lon = - 3.7391411, 19
+    lon = - 3.7391411,
     bot.send_location(m.chat.id, lat, lon)
 
 bot.skip_pending = True
