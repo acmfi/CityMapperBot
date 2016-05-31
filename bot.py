@@ -154,6 +154,16 @@ def send_location(m):
     lon = - 3.7391411,
     bot.send_location(m.chat.id, lat, lon)
 
+
+@bot.message_handler(commands=['update'])
+def auto_update(message):
+    if False:                               # Not yet
+        bot.reply_to(message,
+                     "Reiniciando..")
+        print("Updating..")
+        exit()
+    else:
+
 bot.skip_pending = True
 
 print("Running...")
