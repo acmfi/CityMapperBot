@@ -24,7 +24,8 @@ with open("./GMapsStaticApi.auth", "r") as GMapsStatic_api:
     GMapsStatic_api_name = GMapsStatic_api.readline().strip('\n')
     GMapsStatic_api_pass = GMapsStatic_api.readline().strip('\n').strip(' ')
 
-
+with open('./dataBot/admins.json', 'r') as adminData:
+    admins = json.load(adminData)
 # Listener
 
 
@@ -39,6 +40,14 @@ def listener(messages):
         else:
             print("Group -> " + str(m.chat.title) +
                   " [" + str(m.chat.id) + "]: " + m.text)
+
+
+def isAdmin_fromPrivate(message):
+    if message.chat.type == 'private':
+        userID = message.from_user.id
+        if str(userID) in admins:
+            return True
+        return False
 
 # Initializing listener
 bot.set_update_listener(listener)
@@ -157,12 +166,14 @@ def send_location(m):
 
 @bot.message_handler(commands=['update'])
 def auto_update(message):
-    if False:                               # Not yet
+    if isAdmin_fromPrivate(message):
         bot.reply_to(message,
                      "Reiniciando..")
         print("Updating..")
         exit()
     else:
+        pass
+
 
 bot.skip_pending = True
 
