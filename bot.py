@@ -64,9 +64,10 @@ def tiempoDeEspera(m):
     line_name2 = r['arrives'][1]['lineId']
     destination1 = r['arrives'][0]['destination']
     destination2 = r['arrives'][1]['destination']
-    time = str(datetime.timedelta(seconds=666))
-    textEspera1 = "Proximo bus de la linea " + line_name1 + " con destino " + destination1 + " a " + time
-    textEspera2 = "Proximo bus de la linea " + line_name2 + " con destino " + destination2 + " a " + time
+    time1 = str(datetime.timedelta(seconds=r['arrives'][0]['busTimeLeft']))
+    time2 = str(datetime.timedelta(seconds=r['arrives'][1]['busTimeLeft']))
+    textEspera1 = "Proximo bus de la linea " + line_name1 + " con destino " + destination1 + " a " + time1
+    textEspera2 = "Proximo bus de la linea " + line_name2 + " con destino " + destination2 + " a " + time2
     textEspera = textEspera1 + '\n' + textEspera2
     bot.send_message(m.chat.id, textEspera)
 
