@@ -3,6 +3,7 @@ import telebot
 import json
 import datetime
 from telebot import types
+from citymappy import madBus
 
 
 # Secure token read ####
@@ -65,20 +66,27 @@ def help(message):
 
 @bot.message_handler(commands=['tiempoDeEspera'])
 def tiempoDeEspera(m):
-    url = 'https://openbus.emtmadrid.es:9443/emt-proxy-server/last/geo/GetArriveStop.php'
-    r = requests.post(url, data={'idClient': EMTapi_id, 'passKey': EMTapi_pass,
-                                 'idStop': '755'})
-    r = r.json()
-    line_name1 = r['arrives'][0]['lineId']
-    line_name2 = r['arrives'][1]['lineId']
-    destination1 = r['arrives'][0]['destination']
-    destination2 = r['arrives'][1]['destination']
-    time1 = str(datetime.timedelta(seconds=r['arrives'][0]['busTimeLeft']))
-    time2 = str(datetime.timedelta(seconds=r['arrives'][1]['busTimeLeft']))
-    textEspera1 = "Proximo bus de la linea " + line_name1 + " con destino " + destination1 + " a " + time1
-    textEspera2 = "Proximo bus de la linea " + line_name2 + " con destino " + destination2 + " a " + time2
-    textEspera = textEspera1 + '\n' + textEspera2
-    bot.send_message(m.chat.id, textEspera)
+    idStop = m.text.split(' ')[-1]
+    try:
+        response = madBus.get_stop_time(idStop)
+    except Exception:
+        exception_text = "Error en el formato de la parada.\nPor favor, intentalo de nuevo."
+        bot.send_message(m.chat.id, exception_text)
+        return
+
+    response_text = ""
+    for i in range(response['stops'].__len__()):
+        a = response['stops'][i]['arrival']
+        h = response['stops'][i]['headsign']
+        n = response['stops'][i]['name']
+        if ((a / 60) > 1):
+            a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
+        else:
+            a = str(a % 60) + " segundos."
+        response_text += "\nProximo de autobus de la linea " + n
+        + " con destino " + h + " a " + a
+    bot.send_message(m.chat.id, response_text)
+
 
 
 @bot.message_handler(commands=['whereami'])
