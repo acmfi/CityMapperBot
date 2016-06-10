@@ -64,7 +64,7 @@ def help(message):
     bot.reply_to(message, "Hello " + name + "!")
 
 
-@bot.message_handler(commands=['tiempoDeEspera'])
+@bot.message_handler(commands=['tiempoDeEspera', 't'])
 def tiempoDeEspera(m):
     idStop = m.text.split(' ')[-1]
     try:
