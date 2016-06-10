@@ -71,6 +71,8 @@ def format_stop_time(idStop):
             response_text += "\nProximo autobús de la línea " + n + " con destino " + h + " a " + a
             return response_text
     except:
+        if (response_text != ""):
+            return response_text
         return "Puede que no tenga la parada registrada"
    
 
