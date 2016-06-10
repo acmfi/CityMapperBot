@@ -56,10 +56,10 @@ def format_stop_time(idStop):
     try:
         response = madBus.get_stop_time(idStop)
     except Exception:
-        return exception_text = "Error en el formato de la parada.\nPor favor, intentalo de nuevo."
+        return "Error en el formato de la parada.\nPor favor, intentalo de nuevo."
 
+    response_text = ""
     try:
-        response_text = ""
         for i in range(response['stops'].__len__()):
             a = response['stops'][i]['arrival']
             h = response['stops'][i]['headsign']
@@ -68,9 +68,10 @@ def format_stop_time(idStop):
                 a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
             else:
                 a = str(a % 60) + " segundos."
-                response_text += "\nProximo de autobus de la linea " + n + " con destino " + h + " a " + a
+                response_text += "\nProximo autobús de la línea " + n + " con destino " + h + " a " + a
     except:
         return "Puede que no tenga la parada registrada"
+    return response_text
 
 # Initializing listener
 bot.set_update_listener(listener)
