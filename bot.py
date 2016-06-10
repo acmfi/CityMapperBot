@@ -89,9 +89,7 @@ def help(message):
 @bot.message_handler(commands=['tiempoDeEspera', 't'])
 def tiempoDeEspera(m):
     idStop = m.text.split(' ')[-1]
-    bot.send_message(m.chat.id, format_stop_time(idStop)
-
-
+    bot.send_message(m.chat.id, format_stop_time(idStop))
 
 @bot.message_handler(commands=['whereami'])
 def whereiam(m):
