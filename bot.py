@@ -14,6 +14,7 @@ with open("./acm.token", "r") as TOKEN:
 with open("./dataBot/text.json", "r") as data_text:
     text = json.load(data_text)
     location_text = text['location']
+    help_text = text['help']
 
 # EMT api load
 with open("./EMTapi.auth", "r") as EMTapi:
@@ -50,6 +51,27 @@ def isAdmin_fromPrivate(message):
             return True
         return False
 
+
+def format_stop_time(idStop):
+    try:
+        response = madBus.get_stop_time(idStop)
+    except Exception:
+        return exception_text = "Error en el formato de la parada.\nPor favor, intentalo de nuevo."
+
+    try:
+        response_text = ""
+        for i in range(response['stops'].__len__()):
+            a = response['stops'][i]['arrival']
+            h = response['stops'][i]['headsign']
+            n = response['stops'][i]['name']
+            if ((a / 60) > 1):
+                a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
+            else:
+                a = str(a % 60) + " segundos."
+                response_text += "\nProximo de autobus de la linea " + n + " con destino " + h + " a " + a
+    except:
+        return "Puede que no tenga la parada registrada"
+
 # Initializing listener
 bot.set_update_listener(listener)
 
@@ -58,33 +80,15 @@ bot.set_update_listener(listener)
 ####################
 
 
-@bot.message_handler(commands=['hello'])
+@bot.message_handler(commands=['help', 'start'])
 def help(message):
-    name = message.from_user.username
-    bot.reply_to(message, "Hello " + name + "!")
+    bot.reply_to(message, help_text)
 
 
 @bot.message_handler(commands=['tiempoDeEspera', 't'])
 def tiempoDeEspera(m):
     idStop = m.text.split(' ')[-1]
-    try:
-        response = madBus.get_stop_time(idStop)
-    except Exception:
-        exception_text = "Error en el formato de la parada.\nPor favor, intentalo de nuevo."
-        bot.send_message(m.chat.id, exception_text)
-        return
-
-    response_text = ""
-    for i in range(response['stops'].__len__()):
-        a = response['stops'][i]['arrival']
-        h = response['stops'][i]['headsign']
-        n = response['stops'][i]['name']
-        if ((a / 60) > 1):
-            a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
-        else:
-            a = str(a % 60) + " segundos."
-        response_text += "\nProximo de autobus de la linea " + n + " con destino " + h + " a " + a
-    bot.send_message(m.chat.id, response_text)
+    bot.send_message(m.chat.id, format_stop_time(idStop)
 
 
 
