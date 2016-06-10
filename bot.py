@@ -68,10 +68,11 @@ def format_stop_time(idStop):
                 a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
             else:
                 a = str(a % 60) + " segundos."
-                response_text += "\nProximo autobús de la línea " + n + " con destino " + h + " a " + a
+            response_text += "\nProximo autobús de la línea " + n + " con destino " + h + " a " + a
+            return response_text
     except:
         return "Puede que no tenga la parada registrada"
-    return response_text
+   
 
 # Initializing listener
 bot.set_update_listener(listener)
