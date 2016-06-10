@@ -83,8 +83,7 @@ def tiempoDeEspera(m):
             a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
         else:
             a = str(a % 60) + " segundos."
-        response_text += "\nProximo de autobus de la linea " + n
-        + " con destino " + h + " a " + a
+        response_text += "\nProximo de autobus de la linea " + n + " con destino " + h + " a " + a
     bot.send_message(m.chat.id, response_text)
 
 
