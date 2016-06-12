@@ -53,12 +53,12 @@ def isAdmin_fromPrivate(message):
 
 
 def format_stop_time(idStop):
-    try:
-        response = madBus.get_stop_time(idStop)
-    except Exception:
-        return "Error en el formato de la parada.\nPor favor, intentalo de nuevo."
+    # try:
+    response = madBus.get_stop_time(idStop)
+    # except Exception:
+    #     return "Error. Por favor, intentalo de nuevo."
 
-    response_text = ""
+    response_text = ''
     try:
         for i in range(response['stops'].__len__()):
             a = response['stops'][i]['arrival']
@@ -69,12 +69,9 @@ def format_stop_time(idStop):
             else:
                 a = str(a % 60) + " segundos."
             response_text += "\nProximo autobús de la línea " + n + " con destino " + h + " a " + a
-            return response_text
     except:
-        if (response_text != ""):
-            return response_text
-        return "Puede que no tenga la parada registrada"
-   
+        pass
+    return response_text
 
 # Initializing listener
 bot.set_update_listener(listener)
