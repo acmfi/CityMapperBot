@@ -1,7 +1,6 @@
-import requests
 import telebot
 import json
-import datetime
+import re
 from telebot import types
 from citymappy import madBus
 
@@ -68,7 +67,7 @@ def format_stop_time(idStop):
                 a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
             else:
                 a = str(a % 60) + " segundos."
-            response_text += "\nProximo autobús de la línea " + n + " con destino " + h + " a " + a
+            response_text += "\nProximo *autobús* de la línea " + n + " con destino " + h + " a " + a
     except:
         pass
     return response_text
@@ -84,6 +83,15 @@ bot.set_update_listener(listener)
 @bot.message_handler(commands=['help', 'start'])
 def help(message):
     bot.reply_to(message, help_text)
+
+
+espera = re.compile(r'(/)(\d\d\d?\d?)')
+
+
+@bot.message_handler(func=lambda m: espera.search(str(m.text)))
+def tiempoDeEspera_lambda(m):
+    idStop = espera.search(m.text).group(2)
+    bot.send_message(m.chat.id, format_stop_time(idStop), parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['tiempoDeEspera', 't'])
