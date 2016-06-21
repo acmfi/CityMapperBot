@@ -9,6 +9,7 @@ from citymappy import madBus
 with open("./acm.token", "r") as TOKEN:
     bot = telebot.TeleBot(TOKEN.read().strip())
 
+
 # Load all text to say from json file ####
 with open("./dataBot/text.json", "r") as data_text:
     text = json.load(data_text)
@@ -91,13 +92,36 @@ espera = re.compile(r'(/)(\d\d\d?\d?)')
 @bot.message_handler(func=lambda m: espera.search(str(m.text)))
 def tiempoDeEspera_lambda(m):
     idStop = espera.search(m.text).group(2)
-    bot.send_message(m.chat.id, format_stop_time(idStop), parse_mode="Markdown")
+    markup = types.InlineKeyboardMarkup()
+    actualizar = types.InlineKeyboardButton(text='Actualizar',
+                                            callback_data='rst,' + str(idStop))
+    markup.add(actualizar)
+    bot.send_message(m.chat.id, format_stop_time(idStop),
+                     parse_mode="Markdown", reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.split(',')[0] == 'rst')
+def callback_stop_time(call):
+    idStop = call.data.split(',')[-1]
+    markup = types.InlineKeyboardMarkup()
+    actualizar = types.InlineKeyboardButton(text='Actualizar',
+                                            callback_data='rst,' + str(idStop))
+    markup.add(actualizar)
+    bot.edit_message_text(format_stop_time(idStop),
+                          chat_id=call.message.chat.id,
+                          message_id=call.message.message_id,
+                          parse_mode="Markdown",
+                          reply_markup=markup)
 
 
 @bot.message_handler(commands=['tiempoDeEspera', 't'])
 def tiempoDeEspera(m):
     idStop = m.text.split(' ')[-1]
-    bot.send_message(m.chat.id, format_stop_time(idStop))
+    markup = types.InlineKeyboardMarkup()
+    actualizar = types.InlineKeyboardButton(text='Actualizar',
+                                            callback_data='rst' + idStop)
+    markup.add(actualizar)
+    bot.send_message(m.chat.id, format_stop_time(idStop), reply_markup=markup)
 
 @bot.message_handler(commands=['whereami'])
 def whereiam(m):
@@ -152,6 +176,7 @@ def route(m):
                                          callback_data=">>, " + str(i+1))
     markup.add(izquierda, derecha)
     bot.send_message(m.chat.id, indicacion, reply_markup=markup)
+
 
 @bot.callback_query_handler(func=lambda call:
                             (call.data.split(',')[0] == "<<") or
