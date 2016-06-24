@@ -3,11 +3,13 @@ import json
 import re
 from telebot import types
 from citymappy import madBus
+from citymappy import madCercanias
 
 
 # Secure token read ####
 with open("./acm.token", "r") as TOKEN:
-    bot = telebot.TeleBot(TOKEN.read().strip())
+     bot = telebot.TeleBot(TOKEN.read().strip())
+
 
 
 # Load all text to say from json file ####
@@ -52,13 +54,13 @@ def isAdmin_fromPrivate(message):
         return False
 
 
-def format_stop_time(idStop):
+def format_bus_stop_time(idStop):
     # try:
     response = madBus.get_stop_time(idStop)
     # except Exception:
     #     return "Error. Por favor, intentalo de nuevo."
 
-    response_text = ''
+    response_text = '{:<7}'.format('*Linea*') + '{:^40}'.format('*Destino*') + '{:>10}'.format('*Salida*') + '\n'
     try:
         for i in range(response['stops'].__len__()):
             a = response['stops'][i]['arrival']
@@ -68,10 +70,35 @@ def format_stop_time(idStop):
                 a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
             else:
                 a = str(a % 60) + " segundos."
-            response_text += "\nProximo *autobús* de la línea " + n + " con destino " + h + " a " + a
+            response_text += n + "        " + h + "  " + a + "\n"
     except:
         pass
     return response_text
+
+
+def format_raildepartures(idStop):
+    response = madCercanias.get_departures(idStop)
+    response_text = '{:<10}'.format('*Linea*') + '{:^40}'.format('*Destino*') + '{:>10}'.format('*Salida*') + '\n'
+    # try:
+    times = 7
+    # Prevent massive departures in text
+    if (response['departures'].__len__() < times):
+        times = response['departures'].__len__()
+
+    for i in range(times):
+        n = response['departures'][i]['route_id']
+        d = response['departures'][i]['destination']
+        is_live = response['departures'][i]['is_live']
+        a = response['departures'][i]['arrival']
+        if is_live:
+            a = str(a//60) + ' minutos'
+        else:
+            a = a.split('T')[-1].split('+')[0]
+        response_text += '{:<15}'.format(str(n)) + '{:<40}'.format(str(d)) + '{:>10}'.format(str(a)) + '\n'
+    # except:
+    #     pass
+    return response_text
+
 
 # Initializing listener
 bot.set_update_listener(listener)
@@ -96,7 +123,7 @@ def tiempoDeEspera_lambda(m):
     actualizar = types.InlineKeyboardButton(text='Actualizar',
                                             callback_data='rst,' + str(idStop))
     markup.add(actualizar)
-    bot.send_message(m.chat.id, format_stop_time(idStop),
+    bot.send_message(m.chat.id, format_bus_stop_time(idStop),
                      parse_mode="Markdown", reply_markup=markup)
 
 
@@ -107,7 +134,7 @@ def callback_stop_time(call):
     actualizar = types.InlineKeyboardButton(text='Actualizar',
                                             callback_data='rst,' + str(idStop))
     markup.add(actualizar)
-    bot.edit_message_text(format_stop_time(idStop),
+    bot.edit_message_text(format_bus_stop_time(idStop),
                           chat_id=call.message.chat.id,
                           message_id=call.message.message_id,
                           parse_mode="Markdown",
@@ -121,7 +148,36 @@ def tiempoDeEspera(m):
     actualizar = types.InlineKeyboardButton(text='Actualizar',
                                             callback_data='rst' + idStop)
     markup.add(actualizar)
-    bot.send_message(m.chat.id, format_stop_time(idStop), reply_markup=markup)
+    bot.send_message(m.chat.id, format_bus_stop_time(idStop), reply_markup=markup)
+
+
+@bot.message_handler(commands=['c'])  # Tiempo de espera de cercanias
+def cercanias_departures(m):
+    idStop = m.text.split(' ')[-1]
+    markup = types.InlineKeyboardMarkup()
+    actualizar = types.InlineKeyboardButton(text='Actualizar',
+                                            callback_data='uca' + idStop)
+    # uca = update cercanias arrivals
+    markup.add(actualizar)
+    bot.send_message(m.chat.id,
+                     format_raildepartures(idStop),
+                     parse_mode="Markdown",
+                     reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.split(',')[0] == 'uca')
+def callback_raildepartures(call):
+    idStop = call.data.split(',')[-1]
+    markup = types.InlineKeyboardMarkup()
+    actualizar = types.InlineKeyboardButton(text='Actualizar',
+                                            callback_data='uca,' + str(idStop))
+    markup.add(actualizar)
+    bot.edit_message_text(format_raildepartures(idStop),
+                          chat_id=call.message.chat.id,
+                          message_id=call.message.message_id,
+                          parse_mode="Markdown",
+                          reply_markup=markup)
+
 
 @bot.message_handler(commands=['whereami'])
 def whereiam(m):
