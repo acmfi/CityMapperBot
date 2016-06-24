@@ -1,6 +1,7 @@
 import telebot
 import json
 import re
+import datetime
 from telebot import types
 from citymappy import madBus
 from citymappy import madCercanias
@@ -59,26 +60,25 @@ def format_bus_stop_time(idStop):
     response = madBus.get_stop_time(idStop)
     # except Exception:
     #     return "Error. Por favor, intentalo de nuevo."
-
-    response_text = '{:<7}'.format('*Linea*') + '{:^40}'.format('*Destino*') + '{:>10}'.format('*Salida*') + '\n'
+    response_text = "{: <10}{: ^20}{: >10}\n".format("Linea", "Destino", "Salida")
     try:
         for i in range(response['stops'].__len__()):
             a = response['stops'][i]['arrival']
             h = response['stops'][i]['headsign']
             n = response['stops'][i]['name']
             if ((a / 60) > 1):
-                a = str(a//60) + " minutos y " + str(a % 60) + " segundos."
+                a = str(a//60)
             else:
-                a = str(a % 60) + " segundos."
-            response_text += n + "        " + h + "  " + a + "\n"
+                a = '>>'
+            response_text += '{:<10}{:<20}{:>10}\n'.format(str(n), str(h), str(a))
     except:
         pass
-    return response_text
+    return '```\n' + response_text + '```'
 
 
 def format_raildepartures(idStop):
     response = madCercanias.get_departures(idStop)
-    response_text = '{:<10}'.format('*Linea*') + '{:^40}'.format('*Destino*') + '{:>10}'.format('*Salida*') + '\n'
+    response_text = "{: <10}{: ^20}{: >10}\n".format("Linea", "Destino", "Salida")
     # try:
     times = 7
     # Prevent massive departures in text
@@ -91,13 +91,13 @@ def format_raildepartures(idStop):
         is_live = response['departures'][i]['is_live']
         a = response['departures'][i]['arrival']
         if is_live:
-            a = str(a//60) + ' minutos'
+            a = str(a//60)
         else:
             a = a.split('T')[-1].split('+')[0]
-        response_text += '{:<15}'.format(str(n)) + '{:<40}'.format(str(d)) + '{:>10}'.format(str(a)) + '\n'
+        response_text += '{:<10}{:<20}{:>10}\n'.format(str(n), str(d), str(a))
     # except:
     #     pass
-    return response_text
+    return '```\n' + response_text + '```'
 
 
 # Initializing listener
@@ -128,13 +128,16 @@ def tiempoDeEspera_lambda(m):
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split(',')[0] == 'rst')
-def callback_stop_time(call):
-    idStop = call.data.split(',')[-1]
+def callback_update_stop_time(call):
+    idStop = call.data.split(',')[1]
     markup = types.InlineKeyboardMarkup()
+    callback_data = 'rst,' + str(idStop)
     actualizar = types.InlineKeyboardButton(text='Actualizar',
-                                            callback_data='rst,' + str(idStop))
+                                            callback_data=callback_data)
     markup.add(actualizar)
-    bot.edit_message_text(format_bus_stop_time(idStop),
+    now = str(datetime.datetime.now()).split(' ')[-1].split('.')[0]
+    message = format_bus_stop_time(idStop) + '_' + now + '_'
+    bot.edit_message_text(message,
                           chat_id=call.message.chat.id,
                           message_id=call.message.message_id,
                           parse_mode="Markdown",
