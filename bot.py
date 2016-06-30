@@ -61,17 +61,18 @@ def format_bus_stop_time(idStop):
     response = madBus.get_stop_time(idStop)
     # except Exception:
     #     return "Error. Por favor, intentalo de nuevo."
-    response_text = "{: <10}{: ^20}{: >10}\n".format("Linea", "Destino", "Salida")
+    response_text = "{: <6}{: ^15}{: >6}\n".format("Linea", "Destino", "Salida")
     try:
         for i in range(response['stops'].__len__()):
+            n = str(response['stops'][i]['name'])
+            h = str(response['stops'][i]['headsign'])
+            h_trunk = h[:14] + (h[14:] and '.')  # Prevent a big headsign
             a = response['stops'][i]['arrival']
-            h = response['stops'][i]['headsign']
-            n = response['stops'][i]['name']
             if ((a / 60) > 1):
                 a = str(a//60)
             else:
                 a = '>>'
-            response_text += '{:<10}{:<20}{:>10}\n'.format(str(n), str(h), str(a))
+            response_text += '{: <6}{: ^15}{: >6}\n'.format(n, h, a)
     except:
         pass
     return '```\n' + response_text + '```'
@@ -79,7 +80,7 @@ def format_bus_stop_time(idStop):
 
 def format_raildepartures(idStop):
     response = madCercanias.get_departures(idStop)
-    response_text = "{: <10}{: ^20}{: >10}\n".format("Linea", "Destino", "Salida")
+    response_text = "{: <6}{: ^15}{: >6}\n".format("Linea", "Destino", "Salida")
     # try:
     times = 7
     # Prevent massive departures in text
@@ -87,15 +88,16 @@ def format_raildepartures(idStop):
         times = response['departures'].__len__()
 
     for i in range(times):
-        n = response['departures'][i]['route_id']
-        d = response['departures'][i]['destination']
+        n = str(response['departures'][i]['route_id'])
+        d = str(response['departures'][i]['destination'])
+        d_trunk = d[:14] + (d[14:] and '.')  # Prevent a big headsign
         is_live = response['departures'][i]['is_live']
-        a = response['departures'][i]['arrival']
+        a = str(response['departures'][i]['arrival'])
         if is_live:
-            a = str(a//60)
+            a = str(a//60) + ' min.'
         else:
-            a = a.split('T')[-1].split('+')[0]
-        response_text += '{:<10}{:<20}{:>10}\n'.format(str(n), str(d), str(a))
+            a = a.split('T')[-1].split('+')[0].split(':00')[0]  # hh:mm
+        response_text += '{: <6}{: <15}{: >6}\n'.format(n, d_trunk, a)
     # except:
     #     pass
     return '```\n' + response_text + '```'
