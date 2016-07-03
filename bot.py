@@ -38,14 +38,14 @@ def listener(messages):
     # When new messages arrive TeleBot will call this function.
     for m in messages:
         now = str(datetime.datetime.now()).split(' ')[-1].split('.')[0]
-        if m.content_type == 'text':
+        if m.content_type == 'text' or m.content_type == 'location':
             # Prints the sent message to the console
             if m.chat.type == 'private':
                 print(now + ":: Chat -> " + str(m.chat.first_name) +
-                      " [" + str(m.chat.id) + "]: " + m.text)
+                      " [" + str(m.chat.id) + "]: " + str(m.text))
         else:
             print(now + ":: Group -> " + str(m.chat.title) +
-                  " [" + str(m.chat.id) + "]: " + m.text)
+                  " [" + str(m.chat.id) + "]: " + str(m.text))
 
 
 def isAdmin_fromPrivate(message):
@@ -106,6 +106,11 @@ def format_raildepartures(idStop):
 # Initializing listener
 bot.set_update_listener(listener)
 
+
+# USER DATA ########
+
+location = {}
+
 ####################
 # Bot handlers #####
 ####################
@@ -114,6 +119,16 @@ bot.set_update_listener(listener)
 @bot.message_handler(commands=['help', 'start'])
 def help(message):
     bot.reply_to(message, help_text)
+
+
+@bot.message_handler(func=lambda message: True, content_types=['location'])
+def set_location(message):
+    user = str(message.chat.id)
+    loc = {}
+    loc['lat'] = message.location.latitude
+    loc['lon'] = message.location.longitude
+    location[user] = loc
+    print(location[user])
 
 
 espera = re.compile(r'(/)(\d\d\d?\d?)')
@@ -157,20 +172,6 @@ def tiempoDeEspera(m):
     bot.send_message(m.chat.id, format_bus_stop_time(idStop), reply_markup=markup)
 
 
-@bot.message_handler(commands=['c'])  # Tiempo de espera de cercanias
-def cercanias_departures(m):
-    idStop = m.text.split(' ')[-1]
-    markup = types.InlineKeyboardMarkup()
-    actualizar = types.InlineKeyboardButton(text='Actualizar',
-                                            callback_data='uca' + idStop)
-    # uca = update cercanias arrivals
-    markup.add(actualizar)
-    bot.send_message(m.chat.id,
-                     format_raildepartures(idStop),
-                     parse_mode="Markdown",
-                     reply_markup=markup)
-
-
 @bot.callback_query_handler(func=lambda call: call.data.split(',')[0] == 'uca')
 def callback_raildepartures(call):
     idStop = call.data.split(',')[-1]
@@ -185,6 +186,41 @@ def callback_raildepartures(call):
                           reply_markup=markup)
 
 
+# CERCANIAS
+
+@bot.message_handler(commands=['cerca'])  # Tiempo de espera de cercanias
+def nearby(m):
+    user = str(m.chat.id)
+    if not str(user) in location:
+        response = "Por favor, comparte tu ubicación conmigo y después pregúntame de nuevo:\n /cerca"
+        bot.send_message(m.chat.id, response)
+        return
+    
+    lat = str(location[user]['lat'])
+    lon = str(location[user]['lon'])
+    request = lat + ',' + lon
+    near = madCercanias.nearby(request)
+    response = "Estaciones de cercanías: \n"
+    for i in range(near['railstations'].__len__()):
+        response += str(near['railstations'][i]['name']) + '\n'
+
+    bot.send_message(m.chat.id, response)
+
+
+@bot.message_handler(commands=['cercanias', 'c'])  # Tiempo de espera de cercanias
+def cercanias_departures(m):
+    idStop = m.text.split(' ')[-1]
+    markup = types.InlineKeyboardMarkup()
+    actualizar = types.InlineKeyboardButton(text='Actualizar',
+                                            callback_data='uca' + idStop)
+    # uca = update cercanias arrivals
+    markup.add(actualizar)
+    bot.send_message(m.chat.id,
+                     format_raildepartures(idStop),
+                     parse_mode="Markdown",
+                     reply_markup=markup)
+
+
 @bot.message_handler(commands=['whereami'])
 def whereiam(m):
     teclado = types.ReplyKeyboardMarkup(one_time_keyboard=True,
@@ -193,35 +229,6 @@ def whereiam(m):
                                    request_location=True)
     teclado.row(itemLoc)
     bot.send_message(m.chat.id, location_text, reply_markup=teclado)
-
-markup = types.InlineKeyboardMarkup()
-username_button = types.InlineKeyboardButton("Username",
-                                             callback_data="username")
-id_button = types.InlineKeyboardButton("Id", callback_data="id")
-markup.add(username_button, id_button)
-
-
-@bot.message_handler(commands=['whoami'])
-def whoami(m):
-    bot.send_message(m.chat.id, "Pulsa un botón: ", disable_notification=True,
-                     reply_markup=markup)
-
-
-@bot.callback_query_handler(func=lambda call: call.data == "username")
-def callback_username(call):
-    new_msg = "Tu username es: " + call.from_user.username
-    bot.edit_message_text(new_msg, chat_id=call.message.chat.id,
-                          message_id=call.message.message_id,
-                          reply_markup=markup)
-
-
-@bot.callback_query_handler(func=lambda call: call.data == "id")
-def callback_id(call):
-    new_msg = "Tu id es: " + str(call.from_user.id)
-    bot.edit_message_text(new_msg,
-                          chat_id=call.message.chat.id,
-                          message_id=call.message.message_id,
-                          reply_markup=markup)
 
 
 @bot.message_handler(commands=['route'])
