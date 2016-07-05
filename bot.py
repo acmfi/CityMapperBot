@@ -195,16 +195,21 @@ def nearby(m):
         response = "Por favor, comparte tu ubicación conmigo y después pregúntame de nuevo:\n /cerca"
         bot.send_message(m.chat.id, response)
         return
-    
+
     lat = str(location[user]['lat'])
     lon = str(location[user]['lon'])
     request = lat + ',' + lon
     near = madCercanias.nearby(request)
-    response = "Estaciones de cercanías: \n"
-    for i in range(near['railstations'].__len__()):
-        response += str(near['railstations'][i]['name']) + '\n'
+    response = "Elige la estación de Cercanías"
+    markup = types.InlineKeyboardMarkup()
 
-    bot.send_message(m.chat.id, response)
+    for i in range(near['railstations'].__len__()):
+        station = near['railstations'][i]
+        button = types.InlineKeyboardButton(text=station['name'],
+                                            callback_data=station['id'])
+        markup.add(button)
+
+    bot.send_message(m.chat.id, response, reply_markup=markup)
 
 
 @bot.message_handler(commands=['cercanias', 'c'])  # Tiempo de espera de cercanias
