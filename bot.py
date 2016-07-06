@@ -205,11 +205,21 @@ def nearby(m):
 
     for i in range(near['railstations'].__len__()):
         station = near['railstations'][i]
+        callback = 'cerca|' + user + '|' + station['id']
         button = types.InlineKeyboardButton(text=station['name'],
-                                            callback_data=station['id'])
+                                            callback_data=callback)
         markup.add(button)
 
     bot.send_message(m.chat.id, response, reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.split('|')[0] == 'cerca')
+def callback_nearby(m):
+    user = m.data.split('|')[1]
+    idStop = m.data.split('|')[-1]
+    bot.send_message(user,
+                     format_raildepartures(idStop),
+                     parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['cercanias', 'c'])  # Tiempo de espera de cercanias
@@ -217,7 +227,7 @@ def cercanias_departures(m):
     idStop = m.text.split(' ')[-1]
     markup = types.InlineKeyboardMarkup()
     actualizar = types.InlineKeyboardButton(text='Actualizar',
-                                            callback_data='uca' + idStop)
+                                            callback_data='uca|' + idStop)
     # uca = update cercanias arrivals
     markup.add(actualizar)
     bot.send_message(m.chat.id,
