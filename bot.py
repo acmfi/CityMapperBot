@@ -31,6 +31,46 @@ with open("./GMapsStaticApi.auth", "r") as GMapsStatic_api:
 
 with open('./dataBot/admins.json', 'r') as adminData:
     admins = json.load(adminData)
+
+# USER DATA ########
+
+location = {}
+
+with open("./data/user_fav.json", "r+") as fav:
+    user_fav = json.load(fav)
+
+
+def sign_up(uid):
+    if str(uid) in user_fav:
+        return
+    user_fav[str(uid)] = {'bus_stop': [], 'railstation': []}
+
+
+def add_fav_bus_stop(uid, idStop):
+    if str(uid) not in user_fav:
+        sign_up(uid)
+    user_fav[str(uid)]['bus_stop'].append(str(idStop))
+    save_fav()
+
+
+def add_fav_railstation(uid, idStop):
+    if str(uid) not in user_fav:
+        sign_up(uid)
+    user_fav[str(uid)]['railstation'].append(str(idStop))
+    print(user_fav)
+
+
+def get_fav_stations(uid):
+    if str(uid) not in user_fav:
+        return []
+    return user_fav[str(uid)]['bus_stop']
+
+
+def save_fav():
+    with open("./data/user_fav.json", 'w') as f:
+        f.write(json.dumps(user_fav))
+
+
 # Listener
 
 
@@ -107,13 +147,48 @@ def format_raildepartures(idStop):
 bot.set_update_listener(listener)
 
 
-# USER DATA ########
-
-location = {}
-
 ####################
 # Bot handlers #####
 ####################
+bus_fav = re.compile(r'(/)(fav)( )(\d\d\d?\d?)')
+
+
+@bot.message_handler(func=lambda m: bus_fav.search(str(m.text)))
+def tiempoDeEspera_lambda(m):
+    uid = m.chat.id
+    idStop = bus_fav.search(m.text).group(4)
+    add_fav_bus_stop(uid, str(idStop))
+    response = "Parada añadida a favoritas."
+    bot.send_message(m.chat.id, response)
+
+
+@bot.message_handler(commands=['favoritas'])
+def list_fav(m):
+    uid = m.chat.id
+    stations = get_fav_stations(str(uid))
+    response = "Estas son tus paradas favoritas"
+    markup = types.InlineKeyboardMarkup()
+    for i in range(stations.__len__()):
+        idStop = str(stations[i])
+        callback = "favStop|" + idStop
+        stop = types.InlineKeyboardButton(text=idStop,
+                                          callback_data=callback)
+        markup.add(stop)
+    bot.send_message(m.chat.id, response, reply_markup=markup)
+
+
+callback_fav_stop = re.compile(r'(fav|)(\d\d\d?\d?)')
+
+
+@bot.callback_query_handler(func=lambda m: callback_fav_stop.search(str(m.data)))
+def call_fav_stop(call):
+    idStop = str(callback_fav_stop.search(call.data).group(2))
+    markup = types.InlineKeyboardMarkup()
+    actualizar = types.InlineKeyboardButton(text='Actualizar',
+                                            callback_data='rst,' + str(idStop))
+    markup.add(actualizar)
+    bot.send_message(call.message.chat.id, format_bus_stop_time(idStop),
+                     parse_mode="Markdown", reply_markup=markup)
 
 
 @bot.message_handler(commands=['help', 'start'])
