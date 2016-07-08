@@ -154,7 +154,7 @@ bus_fav = re.compile(r'(/)(fav)( )(\d\d\d?\d?)')
 
 
 @bot.message_handler(func=lambda m: bus_fav.search(str(m.text)))
-def tiempoDeEspera_lambda(m):
+def tiempoDeEspera_fav__lambda(m):
     uid = m.chat.id
     idStop = bus_fav.search(m.text).group(4)
     add_fav_bus_stop(uid, str(idStop))
@@ -177,15 +177,15 @@ def list_fav(m):
     bot.send_message(m.chat.id, response, reply_markup=markup)
 
 
-callback_fav_stop = re.compile(r'(fav|)(\d\d\d?\d?)')
+callback_fav_stop = re.compile(r'(fav)')
 
 
 @bot.callback_query_handler(func=lambda m: callback_fav_stop.search(str(m.data)))
 def call_fav_stop(call):
-    idStop = str(callback_fav_stop.search(call.data).group(2))
+    idStop = str(call.data).split('|')[-1]
     markup = types.InlineKeyboardMarkup()
     actualizar = types.InlineKeyboardButton(text='Actualizar',
-                                            callback_data='rst,' + str(idStop))
+                                            callback_data='rst|' + str(idStop))
     markup.add(actualizar)
     bot.send_message(call.message.chat.id, format_bus_stop_time(idStop),
                      parse_mode="Markdown", reply_markup=markup)
@@ -214,23 +214,26 @@ def tiempoDeEspera_lambda(m):
     idStop = espera.search(m.text).group(2)
     markup = types.InlineKeyboardMarkup()
     actualizar = types.InlineKeyboardButton(text='Actualizar',
-                                            callback_data='rst,' + str(idStop))
+                                            callback_data='rst|' + str(idStop))
     markup.add(actualizar)
     bot.send_message(m.chat.id, format_bus_stop_time(idStop),
                      parse_mode="Markdown", reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.split(',')[0] == 'rst')
+update_bus_stop = re.compile(r'(rst)')
+
+
+@bot.callback_query_handler(func=lambda call: update_bus_stop.search(str(call.data)))
 def callback_update_stop_time(call):
-    idStop = call.data.split(',')[1]
+    idStop = call.data.split('|')[1]
     markup = types.InlineKeyboardMarkup()
-    callback_data = 'rst,' + str(idStop)
+    callback_data = 'rst|' + str(idStop)
     actualizar = types.InlineKeyboardButton(text='Actualizar',
                                             callback_data=callback_data)
     markup.add(actualizar)
     now = str(datetime.datetime.now()).split(' ')[-1].split('.')[0]
     message = format_bus_stop_time(idStop) + '_' + now + '_'
-    bot.edit_message_text(message,
+    bot.edit_message_text(text=message,
                           chat_id=call.message.chat.id,
                           message_id=call.message.message_id,
                           parse_mode="Markdown",
@@ -244,7 +247,9 @@ def tiempoDeEspera(m):
     actualizar = types.InlineKeyboardButton(text='Actualizar',
                                             callback_data='rst' + idStop)
     markup.add(actualizar)
-    bot.send_message(m.chat.id, format_bus_stop_time(idStop), reply_markup=markup)
+    bot.send_message(m.chat.id,
+                     format_bus_stop_time(idStop),
+                     reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.split(',')[0] == 'uca')
